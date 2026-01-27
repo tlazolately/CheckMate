@@ -226,9 +226,16 @@ namespace CheckMate
             // Show feedback in the TextBox
             if (txtFeedback != null)
             {
-                txtFeedback.Text = feedback.Count == 0
-                    ? "Product is ready to publish!"
-                    : "Issues found:\r\n" + string.Join("\r\n", feedback);
+                if (feedback.Count == 0)
+                {
+                    txtFeedback.ForeColor = Color.Green;
+                    txtFeedback.Text = "Product is ready to publish!";
+                }
+                else
+                {
+                    txtFeedback.ForeColor = Color.Red;
+                    txtFeedback.Text = "Issues found:\r\n" + string.Join("\r\n", feedback);
+                }
             }
         }
     }
