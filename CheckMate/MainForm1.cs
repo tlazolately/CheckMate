@@ -15,11 +15,11 @@ namespace CheckMate
             InitializeComponent();
 
             this.Text = "CheckMate Product Input";
-            this.Size = new Size(700, 600); // Form boyutu
+            this.Size = new Size(700, 600);
 
-            int leftMargin = 20;   // sol boşluk
-            int labelOffset = 10;  // label ve input arası boşluk
-            int top = 20;          // başlangıç top
+            int leftMargin = 20;
+            int labelOffset = 10;
+            int top = 20;
 
             // Title
             Label lblTitle = new Label();
@@ -101,7 +101,8 @@ namespace CheckMate
             btnAddImage.Text = "Add Image";
             btnAddImage.Location = new Point(leftMargin + lstImages.Width + 10, top + lblImages.Height + labelOffset);
             btnAddImage.Size = new Size(100, 30);
-            btnAddImage.Click += (s, e) => {
+            btnAddImage.Click += (s, e) =>
+            {
                 MessageBox.Show("Add image functionality not implemented yet");
             };
             this.Controls.Add(btnAddImage);
@@ -124,6 +125,53 @@ namespace CheckMate
             dgvVariants.Columns[1].Name = "Size";
             dgvVariants.Columns[2].Name = "Price";
             this.Controls.Add(dgvVariants);
+
+            // Buttons
+            Button btnSave = new Button();
+            btnSave.Name = "btnSave";
+            btnSave.Text = "Save Product";
+            btnSave.Size = new Size(120, 35);
+            btnSave.Click += btnSave_Click;
+            this.Controls.Add(btnSave);
+
+            Button btnLoad = new Button();
+            btnLoad.Name = "btnLoad";
+            btnLoad.Text = "Load Product";
+            btnLoad.Size = new Size(120, 35);
+            btnLoad.Click += btnLoad_Click;
+            this.Controls.Add(btnLoad);
+
+            Button btnCheck = new Button();
+            btnCheck.Name = "btnCheck";
+            btnCheck.Text = "Check Product";
+            btnCheck.Size = new Size(140, 35);
+            btnCheck.Click += btnCheck_Click;
+            this.Controls.Add(btnCheck);
+
+            //Button positioning
+            int buttonsTop = top + dgvVariants.Height + 20;
+            int buttonWidth = 120;
+            int spacing = 20;
+
+            btnSave.Location = new Point(leftMargin, buttonsTop);
+            btnLoad.Location = new Point(leftMargin + buttonWidth + spacing, buttonsTop);
+            btnCheck.Location = new Point(leftMargin + 2 * (buttonWidth + spacing), buttonsTop);
         }
-    }
-}
+
+        // Event methods
+        private void btnSave_Click(object? sender, EventArgs e)
+        {
+            MessageBox.Show("Save feature will be implemented later.");
+        }
+
+        private void btnLoad_Click(object? sender, EventArgs e)
+        {
+            MessageBox.Show("Load feature will be implemented later.");
+        }
+
+        private void btnCheck_Click(object? sender, EventArgs e)
+        {
+            MessageBox.Show("Product check will be implemented later.");
+        }
+    } 
+} 
