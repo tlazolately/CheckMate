@@ -14,77 +14,116 @@ namespace CheckMate
         {
             InitializeComponent();
 
-            // Form Settings
-            this.Text = "CheckMate - Product Checker";
-            this.Size = new System.Drawing.Size(600, 700);
-            this.StartPosition = FormStartPosition.CenterScreen;
+            this.Text = "CheckMate Product Input";
+            this.Size = new Size(700, 600); // Form boyutu
 
-            // Title Input
+            int leftMargin = 20;   // sol boşluk
+            int labelOffset = 10;  // label ve input arası boşluk
+            int top = 20;          // başlangıç top
+
+            // Title
             Label lblTitle = new Label();
-            lblTitle.Text = "Product Title:";
-            lblTitle.Location = new System.Drawing.Point(20, 20); // X=20, Y=20
+            lblTitle.Text = "Title";
+            lblTitle.Location = new Point(leftMargin, top);
             lblTitle.AutoSize = true;
             this.Controls.Add(lblTitle);
 
             TextBox txtTitle = new TextBox();
             txtTitle.Name = "txtTitle";
-            txtTitle.Location = new System.Drawing.Point(20, 45);
-            txtTitle.Size = new System.Drawing.Size(400, 25);
+            txtTitle.Location = new Point(leftMargin, top + lblTitle.Height + labelOffset);
+            txtTitle.Size = new Size(400, 25);
             this.Controls.Add(txtTitle);
 
-            // Description Input
+            top += txtTitle.Height + lblTitle.Height + 2 * labelOffset;
+
+            // Description
             Label lblDescription = new Label();
-            lblDescription.Text = "Product Description:";
-            lblDescription.Location = new System.Drawing.Point(20, 85);
+            lblDescription.Text = "Description";
+            lblDescription.Location = new Point(leftMargin, top);
             lblDescription.AutoSize = true;
             this.Controls.Add(lblDescription);
 
             TextBox txtDescription = new TextBox();
             txtDescription.Name = "txtDescription";
-            txtDescription.Location = new System.Drawing.Point(20, 110);
-            txtDescription.Size = new System.Drawing.Size(400, 150);
+            txtDescription.Location = new Point(leftMargin, top + lblDescription.Height + labelOffset);
+            txtDescription.Size = new Size(500, 80);
             txtDescription.Multiline = true;
             this.Controls.Add(txtDescription);
 
-            // Tags Input
+            top += txtDescription.Height + lblDescription.Height + 2 * labelOffset;
+
+            // Tags
             Label lblTags = new Label();
-            lblTags.Text = "Product Tags:";
-            lblTags.Location = new System.Drawing.Point(20, 280);
+            lblTags.Text = "Tags (comma-separated)";
+            lblTags.Location = new Point(leftMargin, top);
             lblTags.AutoSize = true;
             this.Controls.Add(lblTags);
 
             TextBox txtTags = new TextBox();
             txtTags.Name = "txtTags";
-            txtTags.Location = new System.Drawing.Point(20, 305);
-            txtTags.Size = new System.Drawing.Size(400, 25);
+            txtTags.Location = new Point(leftMargin, top + lblTags.Height + labelOffset);
+            txtTags.Size = new Size(400, 25);
             this.Controls.Add(txtTags);
 
-            // Category Input
+            top += txtTags.Height + lblTags.Height + 2 * labelOffset;
+
+            // Category
             Label lblCategory = new Label();
-            lblCategory.Text = "Product Category:";
-            lblCategory.Location = new System.Drawing.Point(20, 345);
+            lblCategory.Text = "Category";
+            lblCategory.Location = new Point(leftMargin, top);
             lblCategory.AutoSize = true;
             this.Controls.Add(lblCategory);
 
             ComboBox cmbCategory = new ComboBox();
             cmbCategory.Name = "cmbCategory";
-            cmbCategory.Location = new System.Drawing.Point(20, 370);
-            cmbCategory.Size = new System.Drawing.Size(200, 25);
-            cmbCategory.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbCategory.Location = new Point(leftMargin, top + lblCategory.Height + labelOffset);
+            cmbCategory.Size = new Size(200, 25);
+            cmbCategory.Items.AddRange(new string[] { "T-Shirts", "Sweatshirts", "Jackets", "Pants", "Shoes" });
             this.Controls.Add(cmbCategory);
 
-            // Add predefined categories to ComboBox
-            cmbCategory.Items.Add("Tshirts");      // Example: Tshirts
-            cmbCategory.Items.Add("Sweatshirts");  // Example: Sweatshirts
-            cmbCategory.Items.Add("Jackets");      // Example: Jackets
-            cmbCategory.Items.Add("Pants");        // Example: Pants
-            cmbCategory.Items.Add("Shoes");        // Example: Shoes
+            top += cmbCategory.Height + lblCategory.Height + 2 * labelOffset;
 
-            // Optionally select the first item by default
-            if (cmbCategory.Items.Count > 0)
-            {
-                cmbCategory.SelectedIndex = 0;
-            }
+            // Images
+            Label lblImages = new Label();
+            lblImages.Text = "Images";
+            lblImages.Location = new Point(leftMargin, top);
+            lblImages.AutoSize = true;
+            this.Controls.Add(lblImages);
+
+            ListBox lstImages = new ListBox();
+            lstImages.Name = "lstImages";
+            lstImages.Location = new Point(leftMargin, top + lblImages.Height + labelOffset);
+            lstImages.Size = new Size(200, 100);
+            this.Controls.Add(lstImages);
+
+            Button btnAddImage = new Button();
+            btnAddImage.Name = "btnAddImage";
+            btnAddImage.Text = "Add Image";
+            btnAddImage.Location = new Point(leftMargin + lstImages.Width + 10, top + lblImages.Height + labelOffset);
+            btnAddImage.Size = new Size(100, 30);
+            btnAddImage.Click += (s, e) => {
+                MessageBox.Show("Add image functionality not implemented yet");
+            };
+            this.Controls.Add(btnAddImage);
+
+            top += lstImages.Height + lblImages.Height + 2 * labelOffset;
+
+            // Variants
+            Label lblVariants = new Label();
+            lblVariants.Text = "Variants";
+            lblVariants.Location = new Point(leftMargin, top);
+            lblVariants.AutoSize = true;
+            this.Controls.Add(lblVariants);
+
+            DataGridView dgvVariants = new DataGridView();
+            dgvVariants.Name = "dgvVariants";
+            dgvVariants.Location = new Point(leftMargin, top + lblVariants.Height + labelOffset);
+            dgvVariants.Size = new Size(500, 150);
+            dgvVariants.ColumnCount = 3;
+            dgvVariants.Columns[0].Name = "Color";
+            dgvVariants.Columns[1].Name = "Size";
+            dgvVariants.Columns[2].Name = "Price";
+            this.Controls.Add(dgvVariants);
         }
     }
 }
