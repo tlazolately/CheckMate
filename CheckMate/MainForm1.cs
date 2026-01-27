@@ -10,12 +10,25 @@ namespace CheckMate
 {
     public partial class MainForm1 : Form
     {
+        //Form-level controls
+        private TextBox? txtTitle;
+        private TextBox? txtDescription;
+        private TextBox? txtTags;
+        private ComboBox? cmbCategory;
+        private ListBox? lstImages;
+        private DataGridView? dgvVariants;
+        private Button? btnSave;
+        private Button? btnLoad;
+        private Button? btnCheck;
+        private TextBox? txtFeedback;
         public MainForm1()
         {
             InitializeComponent();
 
             this.Text = "CheckMate Product Input";
             this.Size = new Size(700, 600);
+            this.AutoScroll = true;
+
 
             int leftMargin = 20;
             int labelOffset = 10;
@@ -28,7 +41,7 @@ namespace CheckMate
             lblTitle.AutoSize = true;
             this.Controls.Add(lblTitle);
 
-            TextBox txtTitle = new TextBox();
+            txtTitle = new TextBox();
             txtTitle.Name = "txtTitle";
             txtTitle.Location = new Point(leftMargin, top + lblTitle.Height + labelOffset);
             txtTitle.Size = new Size(400, 25);
@@ -43,7 +56,7 @@ namespace CheckMate
             lblDescription.AutoSize = true;
             this.Controls.Add(lblDescription);
 
-            TextBox txtDescription = new TextBox();
+            txtDescription = new TextBox();
             txtDescription.Name = "txtDescription";
             txtDescription.Location = new Point(leftMargin, top + lblDescription.Height + labelOffset);
             txtDescription.Size = new Size(500, 80);
@@ -59,7 +72,7 @@ namespace CheckMate
             lblTags.AutoSize = true;
             this.Controls.Add(lblTags);
 
-            TextBox txtTags = new TextBox();
+            txtTags = new TextBox();
             txtTags.Name = "txtTags";
             txtTags.Location = new Point(leftMargin, top + lblTags.Height + labelOffset);
             txtTags.Size = new Size(400, 25);
@@ -74,7 +87,7 @@ namespace CheckMate
             lblCategory.AutoSize = true;
             this.Controls.Add(lblCategory);
 
-            ComboBox cmbCategory = new ComboBox();
+            cmbCategory = new ComboBox();
             cmbCategory.Name = "cmbCategory";
             cmbCategory.Location = new Point(leftMargin, top + lblCategory.Height + labelOffset);
             cmbCategory.Size = new Size(200, 25);
@@ -90,7 +103,7 @@ namespace CheckMate
             lblImages.AutoSize = true;
             this.Controls.Add(lblImages);
 
-            ListBox lstImages = new ListBox();
+            lstImages = new ListBox();
             lstImages.Name = "lstImages";
             lstImages.Location = new Point(leftMargin, top + lblImages.Height + labelOffset);
             lstImages.Size = new Size(200, 100);
@@ -116,7 +129,7 @@ namespace CheckMate
             lblVariants.AutoSize = true;
             this.Controls.Add(lblVariants);
 
-            DataGridView dgvVariants = new DataGridView();
+            dgvVariants = new DataGridView();
             dgvVariants.Name = "dgvVariants";
             dgvVariants.Location = new Point(leftMargin, top + lblVariants.Height + labelOffset);
             dgvVariants.Size = new Size(500, 150);
@@ -127,7 +140,7 @@ namespace CheckMate
             this.Controls.Add(dgvVariants);
 
             // Buttons
-            Button btnSave = new Button();
+            btnSave = new Button();
             btnSave.Name = "btnSave";
             btnSave.Text = "Save Product";
             btnSave.Size = new Size(120, 35);
@@ -156,6 +169,18 @@ namespace CheckMate
             btnSave.Location = new Point(leftMargin, buttonsTop);
             btnLoad.Location = new Point(leftMargin + buttonWidth + spacing, buttonsTop);
             btnCheck.Location = new Point(leftMargin + 2 * (buttonWidth + spacing), buttonsTop);
+
+            //Feedback TextBox
+            txtFeedback = new TextBox();
+            txtFeedback.Name = "txtFeedback";
+            txtFeedback.Multiline = true;
+            txtFeedback.ReadOnly = true;
+            txtFeedback.ScrollBars = ScrollBars.Vertical;
+            txtFeedback.Size = new Size(650, 100);
+            txtFeedback.Location = new Point(leftMargin, buttonsTop + 50);
+            txtFeedback.ForeColor = Color.Red;
+            this.Controls.Add(txtFeedback);
+
         }
 
         // Event methods
@@ -172,6 +197,39 @@ namespace CheckMate
         private void btnCheck_Click(object? sender, EventArgs e)
         {
             MessageBox.Show("Product check will be implemented later.");
+            List<string> feedback = new List<string>();
+
+            // Title check
+            if (string.IsNullOrWhiteSpace(txtTitle?.Text) || txtTitle.Text.Length < 5)
+                feedback.Add("Title is too short or empty.");
+
+            // Description check
+            if (string.IsNullOrWhiteSpace(txtDescription?.Text) || txtDescription.Text.Length < 10)
+                feedback.Add("Description is too short or empty.");
+
+            // Category check
+            if (cmbCategory?.SelectedIndex == -1)
+                feedback.Add("No category selected.");
+
+            // Tags check
+            if (string.IsNullOrWhiteSpace(txtTags?.Text))
+                feedback.Add("Tags are empty.");
+
+            // Images check
+            if (lstImages == null || lstImages.Items.Count == 0)
+                feedback.Add("No images added.");
+
+            // Variants check
+            if (dgvVariants == null || dgvVariants.Rows.Count == 0 || dgvVariants.Rows[0].IsNewRow)
+                feedback.Add("No variants added.");
+
+            // Show feedback in the TextBox
+            if (txtFeedback != null)
+            {
+                txtFeedback.Text = feedback.Count == 0
+                    ? "Product is ready to publish!"
+                    : "Issues found:\r\n" + string.Join("\r\n", feedback);
+            }
         }
-    } 
-} 
+    }
+}
