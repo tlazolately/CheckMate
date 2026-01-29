@@ -391,6 +391,17 @@ namespace CheckMate
             dgvVariants!.Rows.Clear();
             foreach (var variant in product.Variants)
                 dgvVariants.Rows.Add(variant.Color, variant.Size, variant.Price);
+            pnlImages.Controls.Clear();
+
+            foreach (var image in product.Images)
+            {
+                PictureBox pb = new PictureBox();
+                pb.Image = Image.FromFile(image);
+                pb.SizeMode = PictureBoxSizeMode.Zoom;
+                pb.Size = new Size(80, 80);
+                pb.Margin = new Padding(5);
+                pnlImages.Controls.Add(pb);
+            }
         }
        
         private FlowLayoutPanel pnlImages;
