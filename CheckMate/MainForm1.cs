@@ -175,7 +175,8 @@ namespace CheckMate
             txtFeedback = new TextBox();
             txtFeedback.Name = "txtFeedback";
             txtFeedback.Multiline = true;
-            txtFeedback.ReadOnly = true;
+            txtFeedback.ReadOnly = false;
+            txtFeedback.TabStop = false;
             txtFeedback.ScrollBars = ScrollBars.Vertical;
             txtFeedback.Size = new Size(650, 100);
             txtFeedback.Location = new Point(leftMargin, buttonsTop + 50);
@@ -197,48 +198,48 @@ namespace CheckMate
 
         private void btnCheck_Click(object? sender, EventArgs e)
         {
-            MessageBox.Show("Product check will be implemented later.");
+            // Create a list to store feedback messages
             List<string> feedback = new List<string>();
 
-            // Title check
+            // Check Title
             if (string.IsNullOrWhiteSpace(txtTitle?.Text) || txtTitle.Text.Length < 5)
                 feedback.Add("Title is too short or empty.");
 
-            // Description check
+            // Check Description
             if (string.IsNullOrWhiteSpace(txtDescription?.Text) || txtDescription.Text.Length < 10)
                 feedback.Add("Description is too short or empty.");
 
-            // Category check
+            // Check Category
             if (cmbCategory?.SelectedIndex == -1)
                 feedback.Add("No category selected.");
 
-            // Tags check
+            // Check Tags
             if (string.IsNullOrWhiteSpace(txtTags?.Text))
                 feedback.Add("Tags are empty.");
 
-            // Images check
+            // Check Images
             if (lstImages == null || lstImages.Items.Count == 0)
                 feedback.Add("No images added.");
 
-            // Variants check
+            // Check Variants
             if (dgvVariants == null || dgvVariants.Rows.Count == 0 || dgvVariants.Rows[0].IsNewRow)
                 feedback.Add("No variants added.");
-            
 
-            // Show feedback in the TextBox
+            // Show feedback in the TextBox with color coding
             if (txtFeedback != null)
             {
                 if (feedback.Count == 0)
                 {
-                    txtFeedback.ForeColor = Color.Green;
+                    txtFeedback.ForeColor = Color.Green; // Yeşil yazı
                     txtFeedback.Text = "Product is ready to publish!";
                 }
                 else
                 {
-                    txtFeedback.ForeColor = Color.Red;
+                    txtFeedback.ForeColor = Color.Red;   // Kırmızı yazı
                     txtFeedback.Text = "Issues found:\r\n" + string.Join("\r\n", feedback);
                 }
             }
+
         }
 
         private void SaveProduct()
