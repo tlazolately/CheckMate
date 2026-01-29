@@ -18,6 +18,7 @@ namespace CheckMate
             public string Color { get; set; } = ""; // Color of the variant
             public string Size { get; set; } = "";  // Size of the variant
             public decimal Price { get; set; }      // Price of the variant
+            public decimal Cost { get; set; }       // Cost of the variant
         }
     }
 }
