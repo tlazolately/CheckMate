@@ -186,7 +186,7 @@ namespace CheckMate
         // Event methods
         private void btnSave_Click(object? sender, EventArgs e)
         {
-            MessageBox.Show("Save feature will be implemented later.");
+            SaveProduct();
         }
 
         private void btnLoad_Click(object? sender, EventArgs e)
@@ -222,6 +222,7 @@ namespace CheckMate
             // Variants check
             if (dgvVariants == null || dgvVariants.Rows.Count == 0 || dgvVariants.Rows[0].IsNewRow)
                 feedback.Add("No variants added.");
+            
 
             // Show feedback in the TextBox
             if (txtFeedback != null)
@@ -237,6 +238,50 @@ namespace CheckMate
                     txtFeedback.Text = "Issues found:\r\n" + string.Join("\r\n", feedback);
                 }
             }
+        }
+
+        private void SaveProduct()
+        {
+            // Ensure all GUI controls exist
+            if (txtTitle == null || txtDescription == null || txtTags == null ||
+                cmbCategory == null || lstImages == null || dgvVariants == null)
+                return;
+
+            // Create a new Product instance
+            Product product = new Product
+            {
+                Title = txtTitle.Text,
+                Description = txtDescription.Text,
+                Tags = new List<string>(txtTags.Text.Split(',')),
+                Category = cmbCategory.SelectedItem?.ToString() ?? "",
+                Images = new List<string>(),
+                Variants = new List<Product.Variant>()
+            };
+
+            // Add images from ListBox
+            foreach (var item in lstImages.Items)
+                product.Images.Add(item.ToString()!);
+
+            // Add variants from DataGridView
+            foreach (DataGridViewRow row in dgvVariants.Rows)
+            {
+                if (row.IsNewRow) continue;
+
+                product.Variants.Add(new Product.Variant
+                {
+                    Color = row.Cells[0].Value?.ToString() ?? "",
+                    Size = row.Cells[1].Value?.ToString() ?? "",
+                    Price = row.Cells[2].Value != null ? Convert.ToDecimal(row.Cells[2].Value) : 0
+                });
+            }
+
+            // Serialize to JSON
+            string json = System.Text.Json.JsonSerializer.Serialize(product, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+            // Save to file
+            System.IO.File.WriteAllText("product.json", json);
+
+            MessageBox.Show("Product saved to product.json", "Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
