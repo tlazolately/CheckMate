@@ -22,6 +22,8 @@ namespace CheckMate
         private Button? btnLoad;
         private Button? btnCheck;
         private TextBox? txtFeedback;
+        private ComboBox? cmbSavedProducts;
+
         public MainForm1()
         {
             InitializeComponent();
@@ -234,6 +236,13 @@ namespace CheckMate
             btnCheck.Click += btnCheck_Click;
             this.Controls.Add(btnCheck);
 
+            Button btnRenew = new Button();
+            btnRenew.Location = new Point(txtTitle.Right + 10, txtTitle.Top); // Title'ın sağında
+            btnRenew.Size = new Size(100, txtTitle.Height); // Title ile aynı yükseklik
+            btnRenew.Text = "Renew";
+            btnRenew.Click += (s, e) => ResetForm();
+            this.Controls.Add(btnRenew);
+
             //Button positioning
             int buttonsTop = top + dgvVariants.Height + 20;
             int buttonWidth = 120;
@@ -243,6 +252,22 @@ namespace CheckMate
             btnLoad.Location = new Point(leftMargin + buttonWidth + spacing, buttonsTop);
             btnCheck.Location = new Point(leftMargin + 2 * (buttonWidth + spacing), buttonsTop);
 
+            // Saved Products ComboBox
+            Label lblSavedProducts = new Label();
+            lblSavedProducts.Text = "Saved Products";
+            lblSavedProducts.Font = new Font("Segoe UI", 9, FontStyle.Regular); // smaller, cleaner font
+            lblSavedProducts.Location = new Point(btnCheck.Right + 30, btnCheck.Top + 5); // slight downward shift
+            lblSavedProducts.AutoSize = true;
+            this.Controls.Add(lblSavedProducts);
+
+            cmbSavedProducts = new ComboBox();
+            cmbSavedProducts.Location = new Point(lblSavedProducts.Left, lblSavedProducts.Bottom + 3); // small gap
+            cmbSavedProducts.Size = new Size(180, 25);
+            this.Controls.Add(cmbSavedProducts);
+
+            // Load saved products into ComboBox
+            LoadSavedProducts();
+            
             //Feedback TextBox
             txtFeedback = new TextBox();
             txtFeedback.Name = "txtFeedback";
@@ -302,12 +327,12 @@ namespace CheckMate
             {
                 if (feedback.Count == 0)
                 {
-                    txtFeedback.ForeColor = Color.Green; // Yeşil yazı
+                    txtFeedback.ForeColor = Color.Green;
                     txtFeedback.Text = "Product is ready to publish!";
                 }
                 else
                 {
-                    txtFeedback.ForeColor = Color.Red;   // Kırmızı yazı
+                    txtFeedback.ForeColor = Color.Red;
                     txtFeedback.Text = "Issues found:\r\n" + string.Join("\r\n", feedback);
                 }
             }
@@ -316,12 +341,14 @@ namespace CheckMate
 
         private void SaveProduct()
         {
-            // Ensure all GUI controls exist
             if (txtTitle == null || txtDescription == null || txtTags == null ||
                 cmbCategory == null || lstImages == null || dgvVariants == null)
                 return;
 
-            // Create a new Product instance
+            string productsDir = "Products";
+            if (!Directory.Exists(productsDir))
+                Directory.CreateDirectory(productsDir);
+
             Product product = new Product
             {
                 Title = txtTitle.Text,
@@ -332,11 +359,9 @@ namespace CheckMate
                 Variants = new List<Product.Variant>()
             };
 
-            // Add images from ListBox
             foreach (var item in lstImages.Items)
                 product.Images.Add(item.ToString()!);
 
-            // Add variants from DataGridView
             foreach (DataGridViewRow row in dgvVariants.Rows)
             {
                 if (row.IsNewRow) continue;
@@ -349,27 +374,35 @@ namespace CheckMate
                 });
             }
 
-            // Serialize to JSON
-            string json = System.Text.Json.JsonSerializer.Serialize(product, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            string safeTitle = string.Join("_", product.Title.Split(Path.GetInvalidFileNameChars()));
+            string filename = Path.Combine(productsDir, $"{safeTitle}_{DateTime.Now:yyyyMMddHHmmss}.json");
 
-            // Save to file
-            System.IO.File.WriteAllText("product.json", json);
+            string json = JsonSerializer.Serialize(product, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filename, json);
 
-            MessageBox.Show("Product saved to product.json", "Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show($"Product saved to {filename}", "Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         private void LoadProduct()
         {
-            // Check if file exists
-            if (!File.Exists("product.json"))
+            // Get the selected product from the ComboBox
+            if (cmbSavedProducts == null || cmbSavedProducts.SelectedItem == null)
             {
-                MessageBox.Show("No saved product found.", "Load", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("No product selected.", "Load", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Read JSON content
-            string json = File.ReadAllText("product.json");
+            string fileName = cmbSavedProducts.SelectedItem.ToString()!;
+            string filePath = Path.Combine("Products", fileName + ".json");
 
-            // Deserialize into Product object
+            // Check if the file exists
+            if (!File.Exists(filePath))
+            {
+                MessageBox.Show("Selected product file not found.", "Load", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Read the product JSON
+            string json = File.ReadAllText(filePath);
             Product product = JsonSerializer.Deserialize<Product>(json)!;
 
             if (product == null)
@@ -384,17 +417,13 @@ namespace CheckMate
             txtTags!.Text = string.Join(",", product.Tags);
             cmbCategory!.SelectedItem = product.Category;
 
+            // Clear previous images and add new ones
             lstImages!.Items.Clear();
-            foreach (var image in product.Images)
-                lstImages.Items.Add(image);
-
-            dgvVariants!.Rows.Clear();
-            foreach (var variant in product.Variants)
-                dgvVariants.Rows.Add(variant.Color, variant.Size, variant.Price);
-            pnlImages.Controls.Clear();
-
+            pnlImages!.Controls.Clear(); // remove old images
             foreach (var image in product.Images)
             {
+                lstImages.Items.Add(image);
+
                 PictureBox pb = new PictureBox();
                 pb.Image = Image.FromFile(image);
                 pb.SizeMode = PictureBoxSizeMode.Zoom;
@@ -402,8 +431,62 @@ namespace CheckMate
                 pb.Margin = new Padding(5);
                 pnlImages.Controls.Add(pb);
             }
+
+            // Fill variants in DataGridView
+            dgvVariants!.Rows.Clear();
+            foreach (var variant in product.Variants)
+                dgvVariants.Rows.Add(variant.Color, variant.Size, variant.Price);
         }
-       
+        
+        // Method to load all saved product files into the ComboBox
+        private void LoadSavedProducts()
+        {
+            // Ensure the ComboBox exists
+            if (cmbSavedProducts == null) return;
+
+            cmbSavedProducts.Items.Clear();
+
+            string productsFolder = Path.Combine(Application.StartupPath, "Products");
+
+            // Create the folder if it doesn't exist
+            if (!Directory.Exists(productsFolder))
+                Directory.CreateDirectory(productsFolder);
+
+            // Get all JSON files in the folder
+            string[] files = Directory.GetFiles(productsFolder, "*.json");
+
+            foreach (string file in files)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(file);
+                cmbSavedProducts.Items.Add(fileName);
+            }
+        }
+        
+        private void ResetForm()
+        {
+            // Clear textboxes
+            txtTitle!.Text = "";
+            txtDescription!.Text = "";
+            txtTags!.Text = "";
+
+            // Reset category selection
+            cmbCategory!.SelectedIndex = -1;
+
+            // Clear images list and panel
+            lstImages!.Items.Clear();
+            pnlImages.Controls.Clear();
+
+            // Clear variants grid
+            dgvVariants!.Rows.Clear();
+
+            // Reset feedback
+            txtFeedback!.Text = "";
+            txtFeedback.ForeColor = Color.Red;
+
+            // Optionally, reset saved product selection
+            cmbSavedProducts!.SelectedIndex = -1;
+        }
+
         private FlowLayoutPanel pnlImages;
         private void btnAddImage_Click(object? sender, EventArgs e)
         {
