@@ -317,10 +317,47 @@ namespace CheckMate
             // Check Images
             if (lstImages == null || lstImages.Items.Count == 0)
                 feedback.Add("No images added.");
+            else
+            {
+                foreach (var item in lstImages.Items)
+                {
+                    string fileName = Path.GetFileName(item.ToString()!);
+
+                    // Check for spaces
+                    if (fileName.Contains(" "))
+                        feedback.Add($"Image filename contains spaces: {fileName}");
+
+                    // Check for invalid characters
+                    if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                        feedback.Add($"Image filename contains invalid characters: {fileName}");
+
+                    // Check extension
+                    string ext = Path.GetExtension(fileName).ToLower();
+                    if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".bmp")
+                        feedback.Add($"Image filename has invalid extension: {fileName}");
+                }
+            }
 
             // Check Variants
             if (dgvVariants == null || dgvVariants.Rows.Count == 0 || dgvVariants.Rows[0].IsNewRow)
                 feedback.Add("No variants added.");
+            else
+            {
+                var colorGroups = dgvVariants.Rows.Cast<DataGridViewRow>()
+                    .Where(r => !r.IsNewRow)
+                    .GroupBy(r => r.Cells[0].Value?.ToString())
+                    .ToList();
+
+                foreach (var group in colorGroups)
+                {
+                    var prices = group.Select(r => Convert.ToDecimal(r.Cells[2].Value ?? 0)).ToList();
+                    if (prices.Count > 1 && prices.Max() - prices.Min() > 20) // 20 birim örnek limit
+                    {
+                        feedback.Add($"Variants of color '{group.Key}' have inconsistent prices.");
+                    }
+                }
+            }
+
 
             // Show feedback in the TextBox with color coding
             if (txtFeedback != null)
