@@ -12,12 +12,12 @@ namespace CheckMate
     public partial class MainForm1 : Form
     {
         //Form-level controls
-        private TextBox? txtTitle;
-        private TextBox? txtDescription;
-        private TextBox? txtTags;
-        private ComboBox? cmbCategory;
-        private ListBox? lstImages;
-        private DataGridView? dgvVariants;
+        private TextBox txtTitle;
+        private TextBox txtDescription;
+        private TextBox txtTags;
+        private ComboBox cmbCategory;
+        private ListBox lstImages;
+        private DataGridView dgvVariants;
         private Button? btnSave;
         private Button? btnLoad;
         private Button? btnCheck;
@@ -187,7 +187,10 @@ namespace CheckMate
                 if (toRemove != null)
                 {
                     pnlImages.Controls.Remove(toRemove);
-                    toRemove.Image.Dispose();
+
+                    if (toRemove.Image != null)
+                        toRemove.Image.Dispose();
+
                     toRemove.Dispose();
                 }
             };
@@ -345,8 +348,14 @@ namespace CheckMate
                     {
                         decimal price = 0, cost = 0;
 
-                        decimal.TryParse(row.Cells[2].Value.ToString(), out price);
-                        decimal.TryParse(row.Cells[3].Value.ToString(), out cost);
+                        var priceCellValue = row.Cells[2].Value;
+                        var costCellValue = row.Cells[3].Value;
+
+                        if (priceCellValue != null)
+                            decimal.TryParse(priceCellValue.ToString(), out price);
+
+                        if (costCellValue != null)
+                            decimal.TryParse(costCellValue.ToString(), out cost);
 
                         if (cost > 0 && price < cost * 1.2m)
                         {
@@ -361,7 +370,6 @@ namespace CheckMate
                 feedback.Add("No variants added.");
             else
             {
-                // Renk bazlı gruplama
                 var colorGroups = dgvVariants.Rows.Cast<DataGridViewRow>()
                     .Where(r => !r.IsNewRow)
                     .GroupBy(r => r.Cells[0].Value?.ToString()) // Color column
@@ -369,14 +377,12 @@ namespace CheckMate
 
                 foreach (var colorGroup in colorGroups)
                 {
-                    // Renk bazlı fiyat kontrolü
                     var prices = colorGroup.Select(r => Convert.ToDecimal(r.Cells[2].Value ?? 0)).ToList();
                     if (prices.Count > 1 && prices.Max() - prices.Min() > 20)
                     {
                         feedback.Add($"Variants of color '{colorGroup.Key}' have inconsistent prices.");
                     }
 
-                    // Boyut bazlı fiyat kontrolü
                     var sizeGroups = colorGroup.GroupBy(r => r.Cells[1].Value?.ToString()); // Size column
                     foreach (var sizeGroup in sizeGroups)
                     {
