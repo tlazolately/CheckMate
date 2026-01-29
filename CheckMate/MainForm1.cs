@@ -21,7 +21,7 @@ namespace CheckMate
         private Button? btnSave;
         private Button? btnLoad;
         private Button? btnCheck;
-        private TextBox? txtFeedback;
+        private RichTextBox txtFeedback;
         private ComboBox? cmbSavedProducts;
 
         public MainForm1()
@@ -172,10 +172,8 @@ namespace CheckMate
 
                 string selectedPath = lstImages.SelectedItem.ToString()!;
 
-                // ListBox'tan sil
                 lstImages.Items.Remove(selectedPath);
 
-                // Panel'deki PictureBox'ı bul ve sil
                 PictureBox? toRemove = null;
                 foreach (Control ctrl in pnlImages.Controls)
                 {
@@ -208,10 +206,11 @@ namespace CheckMate
             dgvVariants.Name = "dgvVariants";
             dgvVariants.Location = new Point(leftMargin, top + lblVariants.Height + labelOffset);
             dgvVariants.Size = new Size(500, 150);
-            dgvVariants.ColumnCount = 3;
+            dgvVariants.ColumnCount = 4;
             dgvVariants.Columns[0].Name = "Color";
             dgvVariants.Columns[1].Name = "Size";
             dgvVariants.Columns[2].Name = "Price";
+            dgvVariants.Columns[3].Name = "Cost";
             this.Controls.Add(dgvVariants);
 
             // Buttons
@@ -237,8 +236,8 @@ namespace CheckMate
             this.Controls.Add(btnCheck);
 
             Button btnRenew = new Button();
-            btnRenew.Location = new Point(txtTitle.Right + 10, txtTitle.Top); // Title'ın sağında
-            btnRenew.Size = new Size(100, txtTitle.Height); // Title ile aynı yükseklik
+            btnRenew.Location = new Point(txtTitle.Right + 10, txtTitle.Top);
+            btnRenew.Size = new Size(100, txtTitle.Height);
             btnRenew.Text = "Renew";
             btnRenew.Click += (s, e) => ResetForm();
             this.Controls.Add(btnRenew);
@@ -267,19 +266,17 @@ namespace CheckMate
 
             // Load saved products into ComboBox
             LoadSavedProducts();
-            
-            //Feedback TextBox
-            txtFeedback = new TextBox();
-            txtFeedback.Name = "txtFeedback";
-            txtFeedback.Multiline = true;
-            txtFeedback.ReadOnly = false;
-            txtFeedback.TabStop = false;
-            txtFeedback.ScrollBars = ScrollBars.Vertical;
-            txtFeedback.Size = new Size(650, 100);
-            txtFeedback.Location = new Point(leftMargin, buttonsTop + 50);
-            txtFeedback.ForeColor = Color.Red;
-            this.Controls.Add(txtFeedback);
 
+            //Feedback TextBox
+            txtFeedback = new RichTextBox();
+            txtFeedback.Location = new Point(leftMargin, buttonsTop + 50);
+            txtFeedback.Size = new Size(600, 180);
+            txtFeedback.ReadOnly = true;
+            txtFeedback.BackColor = Color.White;
+            txtFeedback.BorderStyle = BorderStyle.FixedSingle;
+            txtFeedback.ScrollBars = RichTextBoxScrollBars.Vertical;
+
+            this.Controls.Add(txtFeedback); 
         }
 
         // Event methods
@@ -338,22 +335,56 @@ namespace CheckMate
                 }
             }
 
+            if (dgvVariants != null)
+            {
+                foreach (DataGridViewRow row in dgvVariants.Rows)
+                {
+                    if (row.IsNewRow) continue;
+
+                    if (row.Cells[2].Value != null && row.Cells[3].Value != null)
+                    {
+                        decimal price = 0, cost = 0;
+
+                        decimal.TryParse(row.Cells[2].Value.ToString(), out price);
+                        decimal.TryParse(row.Cells[3].Value.ToString(), out cost);
+
+                        if (cost > 0 && price < cost * 1.2m)
+                        {
+                            feedback.Add($"Variant '{row.Cells[0].Value}-{row.Cells[1].Value}' has low margin.");
+                        }
+                    }
+                }
+            }
+
             // Check Variants
             if (dgvVariants == null || dgvVariants.Rows.Count == 0 || dgvVariants.Rows[0].IsNewRow)
                 feedback.Add("No variants added.");
             else
             {
+                // Renk bazlı gruplama
                 var colorGroups = dgvVariants.Rows.Cast<DataGridViewRow>()
                     .Where(r => !r.IsNewRow)
-                    .GroupBy(r => r.Cells[0].Value?.ToString())
+                    .GroupBy(r => r.Cells[0].Value?.ToString()) // Color column
                     .ToList();
 
-                foreach (var group in colorGroups)
+                foreach (var colorGroup in colorGroups)
                 {
-                    var prices = group.Select(r => Convert.ToDecimal(r.Cells[2].Value ?? 0)).ToList();
-                    if (prices.Count > 1 && prices.Max() - prices.Min() > 20) // 20 birim örnek limit
+                    // Renk bazlı fiyat kontrolü
+                    var prices = colorGroup.Select(r => Convert.ToDecimal(r.Cells[2].Value ?? 0)).ToList();
+                    if (prices.Count > 1 && prices.Max() - prices.Min() > 20)
                     {
-                        feedback.Add($"Variants of color '{group.Key}' have inconsistent prices.");
+                        feedback.Add($"Variants of color '{colorGroup.Key}' have inconsistent prices.");
+                    }
+
+                    // Boyut bazlı fiyat kontrolü
+                    var sizeGroups = colorGroup.GroupBy(r => r.Cells[1].Value?.ToString()); // Size column
+                    foreach (var sizeGroup in sizeGroups)
+                    {
+                        var sizePrices = sizeGroup.Select(r => Convert.ToDecimal(r.Cells[2].Value ?? 0)).ToList();
+                        if (sizePrices.Count > 1 && sizePrices.Max() - sizePrices.Min() > 20)
+                        {
+                            feedback.Add($"Variants of color '{colorGroup.Key}' and size '{sizeGroup.Key}' have inconsistent prices.");
+                        }
                     }
                 }
             }
@@ -362,18 +393,51 @@ namespace CheckMate
             // Show feedback in the TextBox with color coding
             if (txtFeedback != null)
             {
+                txtFeedback.Clear(); 
+
                 if (feedback.Count == 0)
                 {
-                    txtFeedback.ForeColor = Color.Green;
-                    txtFeedback.Text = "Product is ready to publish!";
+                    AppendFeedback("✔ Ready to publish", Color.Green);
                 }
                 else
                 {
-                    txtFeedback.ForeColor = Color.Red;
-                    txtFeedback.Text = "Issues found:\r\n" + string.Join("\r\n", feedback);
+                    foreach (var msg in feedback)
+                    {
+                        AppendFeedback("✖ " + msg, Color.Red);
+                    }
                 }
-            }
 
+                var suggestions = GenerateTagSuggestions(txtDescription?.Text ?? "");
+                if (suggestions.Any())
+                {
+                    string suggestedTags = string.Join(", ", suggestions);
+                    AppendFeedback("* Suggested tags: " + suggestedTags, Color.Gray);
+                }
+
+                if (!string.IsNullOrWhiteSpace(txtDescription?.Text))
+                {
+                    if (txtDescription.Text.Length < 50)
+                        AppendFeedback("* Description is very short for SEO (less than 50 chars)", Color.Gray);
+
+                    if (txtTags != null)
+                    {
+                        var tags = txtTags.Text.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                               .Select(t => t.Trim().ToLower())
+                                               .ToList();
+
+                        bool anyTagInTitleOrDesc = tags.Any(t =>
+                            (txtTitle?.Text ?? "").ToLower().Contains(t) ||
+                            (txtDescription?.Text ?? "").ToLower().Contains(t)
+                        );
+
+                        if (!anyTagInTitleOrDesc && tags.Count > 0)
+                            AppendFeedback("* None of the tags appear in title or description", Color.Gray);
+                    }
+                }
+
+                AppendFeedback("* Consider adding more keywords to description", Color.Gray);
+                AppendFeedback("* You may add lifestyle images for better SEO", Color.Gray);
+            }
         }
 
         private void SaveProduct()
@@ -407,7 +471,8 @@ namespace CheckMate
                 {
                     Color = row.Cells[0].Value?.ToString() ?? "",
                     Size = row.Cells[1].Value?.ToString() ?? "",
-                    Price = row.Cells[2].Value != null ? Convert.ToDecimal(row.Cells[2].Value) : 0
+                    Price = row.Cells[2].Value != null ? Convert.ToDecimal(row.Cells[2].Value) : 0,
+                    Cost = row.Cells[3].Value != null ? Convert.ToDecimal(row.Cells[3].Value) : 0,
                 });
             }
 
@@ -472,7 +537,7 @@ namespace CheckMate
             // Fill variants in DataGridView
             dgvVariants!.Rows.Clear();
             foreach (var variant in product.Variants)
-                dgvVariants.Rows.Add(variant.Color, variant.Size, variant.Price);
+                dgvVariants.Rows.Add(variant.Color, variant.Size, variant.Price, variant.Cost);
         }
         
         // Method to load all saved product files into the ComboBox
@@ -522,6 +587,96 @@ namespace CheckMate
 
             // Optionally, reset saved product selection
             cmbSavedProducts!.SelectedIndex = -1;
+        }
+
+
+        private List<string> GenerateTagSuggestions(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return new List<string>();
+
+            text = System.Text.RegularExpressions.Regex
+                   .Replace(text.ToLower(), @"[^\w\s]", "");
+
+            var words = text.Split(
+                new[] { ' ' },
+                StringSplitOptions.RemoveEmptyEntries
+            );
+
+            Dictionary<string, int> freq = new Dictionary<string, int>();
+
+            foreach (var w in words)
+            {
+                string word = w.Trim().ToLower();
+
+                if (stopWords.Contains(word))
+                    continue;
+
+                if (word.Length < 3)
+                    continue;
+
+                if (freq.ContainsKey(word))
+                    freq[word]++;
+                else
+                    freq[word] = 1;
+            }
+
+            return freq
+                .OrderByDescending(kv => kv.Value)
+                .Take(5)
+                .Select(kv => kv.Key)
+                .ToList();
+        }
+
+        private readonly string[] stopWords = new string[]
+        { "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at","be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't",
+          "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during", "each", "few", "for", "from", "further", "had",
+          "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself",
+          "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", "its",
+          "itself", "let's", "me", "more", "most", "mustn't", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other",
+          "ought", "our", "ours", "ourselves", "out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", "shouldn't", "so",
+          "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd",
+          "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll",
+          "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", "why's",
+          "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves" };
+
+        private void AppendFeedback(string message, Color color)
+        {
+            txtFeedback.SelectionStart = txtFeedback.TextLength;
+            txtFeedback.SelectionLength = 0;
+            txtFeedback.SelectionColor = color;
+
+            txtFeedback.AppendText(message + Environment.NewLine);
+
+            txtFeedback.SelectionColor = txtFeedback.ForeColor;
+        }
+
+        private void CheckBasicSEO(List<string> feedback, List<string> suggestions)
+        {
+            // Description length
+            if (!string.IsNullOrWhiteSpace(txtDescription?.Text))
+            {
+                int len = txtDescription.Text.Length;
+                if (len < 50)
+                    suggestions.Add("* Description is very short for SEO (less than 50 chars).");
+                else if (len > 160)
+                    suggestions.Add("* Description is long for SEO (more than 160 chars).");
+            }
+
+            // Keyword check: check if any tag is in title or description
+            if (!string.IsNullOrWhiteSpace(txtTags?.Text))
+            {
+                var tags = txtTags.Text.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                       .Select(t => t.Trim().ToLower()).ToList();
+
+                bool hasKeyword = tags.Any(tag =>
+                    txtTitle!.Text.ToLower().Contains(tag) ||
+                    txtDescription!.Text.ToLower().Contains(tag)
+                );
+
+                if (!hasKeyword)
+                    suggestions.Add("* None of the tags appear in title or description.");
+            }
         }
 
         private FlowLayoutPanel pnlImages;
