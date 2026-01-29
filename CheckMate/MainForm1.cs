@@ -107,21 +107,93 @@ namespace CheckMate
             lstImages = new ListBox();
             lstImages.Name = "lstImages";
             lstImages.Location = new Point(leftMargin, top + lblImages.Height + labelOffset);
-            lstImages.Size = new Size(200, 100);
+            lstImages.Size = new Size(220, 120);
             this.Controls.Add(lstImages);
+
+            pnlImages = new FlowLayoutPanel();
+            pnlImages.Location = new Point(leftMargin + lstImages.Width + 20, top + lblImages.Height + labelOffset);
+            pnlImages.Size = new Size(360, 160);
+            pnlImages.AutoScroll = true;
+            pnlImages.BorderStyle = BorderStyle.FixedSingle;
+            pnlImages.BackColor = Color.WhiteSmoke;
+            this.Controls.Add(pnlImages);
 
             Button btnAddImage = new Button();
             btnAddImage.Name = "btnAddImage";
             btnAddImage.Text = "Add Image";
-            btnAddImage.Location = new Point(leftMargin + lstImages.Width + 10, top + lblImages.Height + labelOffset);
-            btnAddImage.Size = new Size(100, 30);
+            btnAddImage.Size = new Size(120, 30);
+            btnAddImage.Location = new Point(
+                pnlImages.Left,
+                pnlImages.Bottom + 8
+            );
             btnAddImage.Click += (s, e) =>
             {
-                MessageBox.Show("Add image functionality not implemented yet");
+                using (OpenFileDialog ofd = new OpenFileDialog())
+                {
+                    ofd.Title = "Select Product Images";
+                    ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+                    ofd.Multiselect = true; // Multiple images can be selected
+
+                    if (ofd.ShowDialog() == DialogResult.OK)
+                    {
+                        foreach (string file in ofd.FileNames)
+                        {
+                            lstImages.Items.Add(file);
+
+                            PictureBox pb = new PictureBox();
+                            pb.Image = Image.FromFile(file);
+                            pb.SizeMode = PictureBoxSizeMode.Zoom;
+                            pb.Size = new Size(80, 80);
+                            pb.Margin = new Padding(5);
+                            pb.Tag = file;
+                            pnlImages.Controls.Add(pb);
+                        }
+                    }
+                }
             };
             this.Controls.Add(btnAddImage);
+            
+            Button btnRemoveImage = new Button();
+            btnRemoveImage.Text = "Remove Image";
+            btnRemoveImage.Size = new Size(120, 30);
+            btnRemoveImage.Location = new Point(
+                btnAddImage.Left + btnAddImage.Width + 10,
+                btnAddImage.Top
+            );
+            btnRemoveImage.Click += (s, e) =>
+            {
+                if (lstImages.SelectedItem == null)
+                {
+                    MessageBox.Show("Please select an image to remove.");
+                    return;
+                }
 
-            top += lstImages.Height + lblImages.Height + 2 * labelOffset;
+                string selectedPath = lstImages.SelectedItem.ToString()!;
+
+                // ListBox'tan sil
+                lstImages.Items.Remove(selectedPath);
+
+                // Panel'deki PictureBox'ı bul ve sil
+                PictureBox? toRemove = null;
+                foreach (Control ctrl in pnlImages.Controls)
+                {
+                    if (ctrl is PictureBox pb && pb.Tag?.ToString() == selectedPath)
+                    {
+                        toRemove = pb;
+                        break;
+                    }
+                }
+
+                if (toRemove != null)
+                {
+                    pnlImages.Controls.Remove(toRemove);
+                    toRemove.Image.Dispose();
+                    toRemove.Dispose();
+                }
+            };
+            this.Controls.Add(btnRemoveImage);
+
+            top = Math.Max(lstImages.Bottom, btnAddImage.Bottom) + 30;
 
             // Variants
             Label lblVariants = new Label();
@@ -319,6 +391,29 @@ namespace CheckMate
             dgvVariants!.Rows.Clear();
             foreach (var variant in product.Variants)
                 dgvVariants.Rows.Add(variant.Color, variant.Size, variant.Price);
+        }
+       
+        private FlowLayoutPanel pnlImages;
+        private void btnAddImage_Click(object? sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+            ofd.Multiselect = true;
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                foreach (string file in ofd.FileNames)
+                {
+                    lstImages.Items.Add(file);
+
+                    // PictureBox
+                    PictureBox pb = new PictureBox();
+                    pb.Image = Image.FromFile(file);
+                    pb.SizeMode = PictureBoxSizeMode.Zoom;
+                    pb.Size = new Size(80, 80);
+                    pb.Margin = new Padding(5);
+                    pnlImages.Controls.Add(pb);
+                }
+            }
         }
     }
 }
