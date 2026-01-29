@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Text;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace CheckMate
@@ -191,7 +192,7 @@ namespace CheckMate
 
         private void btnLoad_Click(object? sender, EventArgs e)
         {
-            MessageBox.Show("Load feature will be implemented later.");
+            LoadProduct();
         }
 
         private void btnCheck_Click(object? sender, EventArgs e)
@@ -282,6 +283,41 @@ namespace CheckMate
             System.IO.File.WriteAllText("product.json", json);
 
             MessageBox.Show("Product saved to product.json", "Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        private void LoadProduct()
+        {
+            // Check if file exists
+            if (!File.Exists("product.json"))
+            {
+                MessageBox.Show("No saved product found.", "Load", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Read JSON content
+            string json = File.ReadAllText("product.json");
+
+            // Deserialize into Product object
+            Product product = JsonSerializer.Deserialize<Product>(json)!;
+
+            if (product == null)
+            {
+                MessageBox.Show("Failed to load product.", "Load", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Fill GUI fields
+            txtTitle!.Text = product.Title;
+            txtDescription!.Text = product.Description;
+            txtTags!.Text = string.Join(",", product.Tags);
+            cmbCategory!.SelectedItem = product.Category;
+
+            lstImages!.Items.Clear();
+            foreach (var image in product.Images)
+                lstImages.Items.Add(image);
+
+            dgvVariants!.Rows.Clear();
+            foreach (var variant in product.Variants)
+                dgvVariants.Rows.Add(variant.Color, variant.Size, variant.Price);
         }
     }
 }
